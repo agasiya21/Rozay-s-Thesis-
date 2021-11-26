@@ -1,0 +1,33 @@
+code,label
+primary_trips,Primary trip
+work_trip,Work trips
+study_trip,Study trips
+shopping_trips,Shopping trips
+recreational_activity,Recreational trips 
+social_activity,Social activity  trips
+e_learning,Online learning 
+teleshopping,Online shopping 
+teleworking,Teleworking 
+distance_traveled,Distance travel
+mode_of_transport,Mode of transport
+mode_transport,Mode of Transport
+reason_of_mode,Factors influencing the choice of mode before covid 19
+change_mode,Change of mode
+transport_mode,Mode of transport
+fac_inf_mode,Factors influencing the choice of mode during covid 19
+fac_res_movement,Reduction of movement after lockdown
+private_car,Risk of infection in a Private car
+trotro,Risk of infection in Trotro
+uber_bolt,Risk of infection in Bolt/Uber
+bicycle,Risk of infection on Bicycle
+motrobike,Risk of infection on Motorbike
+walking,Risk of infection by walking
+gender,Gender
+age,Age
+edu,Education Level
+edu_level,Education Level
+employ_status,Employment status
+income,Average monthly household income
+marital_status,Marital status
+household_car_own,Car ownership
+motor_bicycle_own,Motor/Bicycle Ownership

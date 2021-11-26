@@ -1,0 +1,311 @@
+---
+title: "Thesis"
+author: "ENOCK OSEI"
+output:
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,  fig.width = 14,fig.height = 8, size = 16,	message = FALSE, warning = FALSE, comment = NA)
+library(tidyverse)
+library(gtsummary)
+library(summarytools)
+library(gt)
+library(ggstatsplot)
+library(finalfit)
+library(flextable)
+library(ggpubr)
+library(nnet)
+library(haven)
+library(easystats)
+library(readxl)
+library(huxtable)
+before <- read.csv("bc.csv")
+during <- read.csv("dc.csv")
+#during <- read.csv("C:\\R Projects\\thesis\\during.csv")
+codebook <- read.csv("codebk.csv")
+Hmisc::label(before, self = F) <- codebook$label
+Hmisc::label(during, self = F) <- codebook$label
+#str(before)
+```
+
+## Demography
+```{r}
+before %>% select(age, gender, edu, employ_status, marital_status, household_car_own, motor_bicycle_own, income) %>% 
+  tbl_summary() %>% 
+  bold_labels() %>% 
+  as_flex_table()
+```
+
+```{r eval=FALSE, include=FALSE}
+thesis %>% select(primary_trips, work_trip, study_trip, shopping_trips, recreational_activity, social_activity, e_learning, teleshopping, primary_trip, distance_traveled, mode_of_transport, reason_of_mode, primary_trip, w_trips, st_trips, sh_trips, rec_ac_trip, soci_ac_trip, elearning, tele_working, tele_shopping, dis_travel, change_mode, transport_mode, fac_inf_mode, fac_res_movement) %>% filter(change_mode!="") %>% tbl_summary() %>% bold_labels() %>% as_flex_table()
+```
+
+## Primary Trips Before COvid By Gender
+```{r}
+sex<-before %>% select(gender, primary_trips) %>% tbl_summary(by = "gender") %>% bold_labels()
+ed<-before %>% select(edu, primary_trips) %>% tbl_summary(by = "edu") %>% bold_labels()
+tbl_merge(tbls = list(sex, ed), tab_spanner = c("Gender", "Education")) %>% as_flex_table()
+```
+
+## Frequency of Primary Trips Before and During Covid
+```{r}
+bf<-before %>% select(work_trip, study_trip, shopping_trips, recreational_activity, social_activity) %>% tbl_summary()
+du<-during %>% select(work_trip, study_trip, shopping_trips, recreational_activity, social_activity) %>% tbl_summary()
+tbl_merge(tbls = list(bf, du), tab_spanner = c("Before Covid", "During Covid")) %>% bold_labels() %>% as_flex_table()
+```
+
+## Frequency of Online Activities Before and During Covid
+```{r}
+bf<-before %>% select(e_learning, teleshopping, teleworking) %>% tbl_summary()
+du<-during %>% select(e_learning, teleshopping, teleworking) %>% tbl_summary()
+tbl_merge(tbls = list(bf, du), tab_spanner = c("Before Covid", "During Covid")) %>% bold_labels() %>% as_flex_table()
+```
+
+## Frequency of Primary tripps Before and During Covid by Gender
+```{r}
+bf<-before %>% select(primary_trips) %>% tbl_summary()
+du<-during %>% select(primary_trips) %>% tbl_summary()
+tbl_merge(tbls = list(bf, du), tab_spanner = c("Before Covid", "During Covid")) %>% bold_labels() %>% as_flex_table()
+```
+
+## Frequency of distance traveled Before and During Covid by Gender
+```{r}
+bf<-before %>% select(distance_traveled, gender) %>% tbl_summary(by = gender)
+du<-during %>% select(distance_traveled, gender) %>% tbl_summary(by = gender)
+tbl_merge(tbls = list(bf, du), tab_spanner = c("Before Covid", "During Covid")) %>% bold_labels() %>% as_flex_table()
+```
+
+## Frequency of distance traveled Before and During Covid by Household car ownership
+```{r}
+bf<-before %>% select(household_car_own, distance_traveled) %>% filter(household_car_own!="no")%>% tbl_summary(by = household_car_own)
+du<-during %>% select(household_car_own, distance_traveled) %>%filter(household_car_own!="no") %>% tbl_summary(by = household_car_own)
+tbl_merge(tbls = list(bf, du), tab_spanner = c("Before Covid", "During Covid")) %>% bold_labels() %>% as_flex_table()
+```
+
+```{r eval=FALSE, include=FALSE}
+thesis <- read_excel("questionnaire.xlsx")
+thesis %>%
+  pivot_longer(27:32, names_to = "Risk", values_to = "Response") %>% 
+  mutate(
+    Risk = fct_recode(Risk, 
+                     "Risk of Covid in Private car" = "risk_private_car",
+                  "Risk of Covid in Trotro" = "risk_trotro",
+                  "Risk of Covid in Uber or Bolt" = "risk_uber_bolt",
+                   "Risk of Covid on Bicycle" = "risk_bicycle",
+                   "Risk of Covid in Moto Bicycle" = "risk_motorbike",
+                   "Risk of Covid in Walking" = "risk_walking")) %>% 
+      select(Risk, Response) %>% filter(Response !="") %>% 
+  tbl_cross(row = Risk, col = Response, margin = "column", percent = "cell") %>% 
+  modify_caption("**Table 1**") %>% 
+  as_flex_table()
+```
+
+## Perceived Risk of infection (Graph)
+```{r}
+before <- read.csv("bc.csv")
+before %>%
+  pivot_longer(17:22, names_to = "Risk", values_to = "Response") %>% 
+  mutate(
+    Risk = fct_recode(Risk, 
+                     "Risk of Covid in Private car" = "private_car",
+                  "Risk of Covid in Trotro" = "trotro",
+                  "Risk of Covid in Uber or Bolt" = "uber_bolt",
+                   "Risk of Covid on Bicycle" = "bicycle",
+                   "Risk of Covid in Moto Bicycle" = "motorbike",
+                   "Risk of Covid in Walking" = "walking")) %>% 
+  filter(Response !="6") %>% 
+   ggbarstats(x = Response, y = Risk, ylab = "status", title = "Respondent's Response to Risks of Traveling", bf.message = F, proportion.test = F,   results.subtitle = FALSE) + 
+  #scale_fill_lancet() +
+  theme(
+    legend.position = "bottom"
+  ) +
+  coord_flip()
+```
+
+## Multinomial Logistic Regression
+# @ before covid
+
+
+## We now split the dataset into train and test using "sample_frac()" function from {dplyr} package
+# Using sample_frac to create 70 - 30 slipt into test and train
+```{r eval=FALSE, include=FALSE}
+train_before <- sample_frac(before, 0.8)
+sample_id <- as.numeric(rownames(train)) # rownames() returns character so as.numeric
+test_before <- before[-sample_id,]
+```
+
+# Another way of spliting the data
+```{r}
+#Splitting the data using a function from dplyr package
+library(caret)
+
+index <- createDataPartition(before$mode_transport, p = .80, list = FALSE)
+train <- before[index,]
+test <- before[-index,]
+```
+
+```{r}
+before$mode_transport <- as.factor(before$mode_transport)
+```
+
+# Benchmark or reference
+```{r}
+before$mode_transport <- relevel(before$mode_transport, ref = "Non_motorized_transport")
+```
+
+## model 
+```{r}
+modl <- multinom(mode_transport ~ primary_trips + gender + age + edu_level + marital_status + employ_status, data = before)
+summary(modl)
+```
+
+# Odds
+```{r}
+exp(coef(modl))
+```
+
+## p-value
+```{r}
+zvalues <- summary(modl)$coefficients/summary(modl)$standard.error
+p <- (1-pnorm(abs(zvalues), 0, 1))*2
+p
+```
+
+# Predicting and Accuracy the class on train dataset.
+```{r}
+# Predicting the values for train dataset
+train$predicted <- predict(modl, newdata = train, "class")
+ 
+# Building classification table
+tab <- table(train$mode_transport, train$predicted)
+ 
+# Calculating accuracy - sum of diagonal elements divided by total obs
+round((sum(diag(tab))/sum(tab)) * 100, 2)
+```
+
+## Predicting and Accuracy the class on test dataset.
+```{r}
+# Predicting the class for test dataset
+test$Predicted <- predict(modl, newdata = test, "class")
+
+# Building classification table
+tab <- table(test$mode_transport, test$Predicted)
+
+# Calculating accuracy - sum of diagonal elements divided by total obs
+round((sum(diag(tab))/sum(tab)) * 100, 2)
+```
+
+# Prediction
+```{r}
+head(predict(modl, before, type = "prob"))## prediction for the first 6 obs. Remove head to see all
+```
+
+# Misclassification error
+```{r}
+mce <- table(predict(modl), before$mode_transport)
+mce
+```
+263 respondents were classified as Paratransiters and the model confirms that is true. However, 2 of them were classified as Ride_hailing but the model says they are Private_transporters. etc                
+
+# Misclassification Error Percentage
+```{r}
+round((1 - sum(diag(mce))/sum(mce)) * 100 ,2)
+```
+
+# @ during covid
+
+# Another way of spliting the data
+```{r}
+#Splitting the data using a function from dplyr package
+library(caret)
+
+index <- createDataPartition(during$transport_mode, p = .80, list = FALSE)
+train <- during[index,]
+test <- during[-index,]
+```
+
+```{r}
+during$transport_mode <- as.factor(during$transport_mode)
+```
+
+# Benchmark or reference
+```{r}
+during$transport_mode <- relevel(during$transport_mode, ref = "Non motorized transport")
+```
+
+## model 
+```{r}
+modll <- multinom(transport_mode ~ primary_trips + gender + age + edu_level + marital_status + employ_status, data = during)
+summary(modll)
+```
+
+```{r}
+library(finalfit)
+library(kableExtra)
+explanatory = c("primary_trips", "gender", "age", "edu_level", "marital_status", "employ_status")
+dependent = "transport_mode"
+during %>%
+ finalfit(dependent, explanatory,
+          metrics = TRUE, keep_models = TRUE) -> tb
+knitr::kable(tb, row.names=FALSE, align=c("l", "l", "r", "r", "r", "r"))
+```
+
+#Odds
+```{r}
+exp(coef(modll))
+```
+
+## p-value
+```{r}
+zvalues <- summary(modll)$coefficients/summary(modll)$standard.error
+p <- (1-pnorm(abs(zvalues), 0, 1))*2
+p
+```
+# Accuracy
+```{r}
+# Predicting the values for train dataset
+during$precticed <- predict(modll, newdata = during, "class")
+ 
+# Building classification table
+ctable <- table(during$transport_mode, during$precticed)
+ 
+# Calculating accuracy - sum of diagonal elements divided by total obs
+round((sum(diag(ctable))/sum(ctable))*100,2)
+```
+
+## Predicting and Accuracy the class on test dataset.
+```{r}
+# Predicting the class for test dataset
+test$Predicted <- predict(modll, newdata = test, "class")
+
+# Building classification table
+tab <- table(test$transport_mode, test$Predicted)
+
+# Calculating accuracy - sum of diagonal elements divided by total obs
+round((sum(diag(tab))/sum(tab)) * 100, 2)
+```
+We were able to achieve 63.29% accuracy in the test dataset and this number is very close to train, and thus we conclude that the model is good and is also stable.
+
+# Prediction
+```{r}
+head(predict(modll, during, type = "prob")) ## prediction for the first 6 obs. Remove head to see all
+```
+
+# Predicted Probabilities 
+```{r eval=FALSE, include=FALSE}
+head(pp <- fitted(modll))
+```
+
+# Misclassification error
+```{r}
+mce <- table(predict(modll), during$transport_mode)
+mce
+```
+181 respondents were classified as Paratransiters and the model confirms that is true. However, 2 of them were classified as Paratransiters but the model says they are Non motorized transporters. 
+
+# Misclassification Error Percentage
+```{r}
+round((1 - sum(diag(mce))/sum(mce))*100,2)
+```
